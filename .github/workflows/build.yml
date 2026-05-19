@@ -19,24 +19,33 @@ jobs:
         id: setup-ndk
         with:
           ndk-version: r25c
+
       - name: Init AList source (with GuangYaPan)
         run: cd alist-lib/scripts && chmod +x *.sh && ./init_alist.sh
+
+      - name: Run go mod tidy
+        run: cd alist-lib/alistlib && go mod tidy
+
       - name: Init gomobile
         run: cd alist-lib/scripts && ./init_gomobile.sh
+
       - name: Build AAR
         run: cd alist-lib/scripts && ./gobind.sh
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: aar
           path: output/*.aar
+
       - name: Extract .so
         run: |
           mkdir -p so
           for a in output/*.aar; do
             [ -f "$a" ] && unzip -o "$a" "jni/*" -d so/
           done
+
       - uses: actions/upload-artifact@v4
         with:
           name: libgojni
