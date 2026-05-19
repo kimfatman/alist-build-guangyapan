@@ -2,6 +2,9 @@
 set -e
 cd ../alistlib || exit
 go mod tidy
+cd ../scripts
+./fix_deps.sh
+cd ../alistlib || exit
 if [ "$1" == "debug" ]; then
   gomobile bind -ldflags "-s -w" -v -androidapi 19 -target="android/arm64"
 else
