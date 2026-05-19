@@ -1,0 +1,43 @@
+name: Build AList with GuangYaPan
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r25c
+      - name: Init AList source (with GuangYaPan)
+        run: cd alist-lib/scripts && chmod +x *.sh && ./init_alist.sh
+      - name: Init gomobile
+        run: cd alist-lib/scripts && ./init_gomobile.sh
+      - name: Build AAR
+        run: cd alist-lib/scripts && ./gobind.sh
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aar
+          path: output/*.aar
+      - name: Extract .so
+        run: |
+          mkdir -p so
+          for a in output/*.aar; do
+            [ -f "$a" ] && unzip -o "$a" "jni/*" -d so/
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libgojni
+          path: so/jni/arm64-v8a/*.so
